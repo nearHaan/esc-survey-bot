@@ -1,20 +1,39 @@
 import { Telegraf } from "telegraf";
 import "dotenv/config";
+import puppeteer from "puppeteer";
 
-const bot = new Telegraf(process.env.BOT_API_TOKEN!);
+(async () => {
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
 
-bot.start((ctx) => {
-  ctx.reply("Hello! I am your EscSurveyBot");
-});
+  await page.goto(process.env.SITE_URL!);
+  await page.setViewport({ width: 1080, height: 1024 });
 
-bot.help((ctx) => {
-  ctx.reply("Available help commands: /start ,/help");
-});
+  await page.locator("#LoginForm_username").fill(process.env.LOGIN_USERNAME!);
+  await page.locator("#LoginForm_password").fill(process.env.LOGIN_PASSWORD!);
 
-bot.on("text", (ctx) => {
-  ctx.reply(`You said: ${ctx.message.text}`);
-});
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "networkidle0" }),
+    page.click(".btn-success"),
+  ]);
 
-bot.launch();
+  await browser.close();
 
-console.log("Bot is running...");
+  const bot = new Telegraf(process.env.BOT_API_TOKEN!);
+
+  bot.start((ctx) => {
+    ctx.reply("Hello! I am your EscSurveyBot");
+  });
+
+  bot.help((ctx) => {
+    ctx.reply("Available help commands: /start ,/help");
+  });
+
+  bot.on("text", (ctx) => {
+    ctx.reply(`titles: ${""}`);
+  });
+
+  bot.launch();
+
+  console.log("Bot is running...");
+})();
